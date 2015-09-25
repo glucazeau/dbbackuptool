@@ -21,17 +21,17 @@ public abstract class AbstractDatabaseServerService {
 	protected Connection connection;
 
 	protected String getConnectionUrl(Database database) {
-		StringBuffer connectionUrlBuffer = new StringBuffer("jdbc:");
-		connectionUrlBuffer.append(this.databaseServer.getVendor().toString().toLowerCase());
-		connectionUrlBuffer.append("://");
-		connectionUrlBuffer.append(databaseServer.getHostname());
-		connectionUrlBuffer.append(":");
-		connectionUrlBuffer.append(databaseServer.getPort());
-		connectionUrlBuffer.append("/");
+		StringBuilder connectionUrlBuilder = new StringBuilder("jdbc:");
+		connectionUrlBuilder.append(this.databaseServer.getVendor().toString().toLowerCase());
+		connectionUrlBuilder.append("://");
+		connectionUrlBuilder.append(databaseServer.getHostname());
+		connectionUrlBuilder.append(":");
+		connectionUrlBuilder.append(databaseServer.getPort());
+		connectionUrlBuilder.append("/");
 		if (database != null) {
-			connectionUrlBuffer.append(database.getName());
+			connectionUrlBuilder.append(database.getName());
 		}
-		return connectionUrlBuffer.toString();
+		return connectionUrlBuilder.toString();
 	}
 	
 	public Connection getConnection(Database database) throws SQLException {
