@@ -1,24 +1,19 @@
 package com.guillaume.dbbackuptool.service;
 
-import com.guillaume.dbbackuptool.bo.Database;
+import java.sql.DatabaseMetaData;
+
 import com.guillaume.dbbackuptool.bo.DatabaseServer;
+import com.guillaume.dbbackuptool.bo.MySqlTableField;
+import com.guillaume.dbbackuptool.bo.TableField;
 
 public class MySqlDatabaseServerService extends AbstractDatabaseServerService {
-
+	
 	public MySqlDatabaseServerService(DatabaseServer databaseServer) {
 		this.databaseServer = databaseServer;
 	}
 	
 	@Override
-	public String getConnectionUrl(Database database) {
-		StringBuffer connectionUrlBuffer = new StringBuffer("jdbc:mysql://");
-		connectionUrlBuffer.append(databaseServer.getHostname());
-		connectionUrlBuffer.append(":");
-		connectionUrlBuffer.append(databaseServer.getPort());
-		connectionUrlBuffer.append("/");
-		if (database != null) {
-			connectionUrlBuffer.append(database.getName());
-		}
-		return connectionUrlBuffer.toString();
+	protected TableField getNewField(String name, DatabaseMetaData metaData) {
+		return new MySqlTableField(name, metaData);
 	}
 }

@@ -1,10 +1,10 @@
 package com.guillaume.dbbackuptool.service;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -12,6 +12,7 @@ import java.util.Properties;
 import com.guillaume.dbbackuptool.bo.Database;
 import com.guillaume.dbbackuptool.bo.DatabaseServer;
 import com.guillaume.dbbackuptool.bo.DatabaseTable;
+import com.guillaume.dbbackuptool.bo.TableField;
 
 public abstract class AbstractDatabaseServerService {
 
@@ -19,11 +20,19 @@ public abstract class AbstractDatabaseServerService {
 
 	protected Connection connection;
 
-	protected String LIST_DATABASES_QUERY = "SHOW DATABASES";
-
-	protected String LIST_TABLES_QUERY = "SHOW TABLES";
-	
-	public abstract String getConnectionUrl(Database database);
+	protected String getConnectionUrl(Database database) {
+		StringBuffer connectionUrlBuffer = new StringBuffer("jdbc:");
+		connectionUrlBuffer.append(this.databaseServer.getVendor().toString().toLowerCase());
+		connectionUrlBuffer.append("://");
+		connectionUrlBuffer.append(databaseServer.getHostname());
+		connectionUrlBuffer.append(":");
+		connectionUrlBuffer.append(databaseServer.getPort());
+		connectionUrlBuffer.append("/");
+		if (database != null) {
+			connectionUrlBuffer.append(database.getName());
+		}
+		return connectionUrlBuffer.toString();
+	}
 	
 	public Connection getConnection(Database database) throws SQLException {
 		if (this.connection == null) {
@@ -47,49 +56,49 @@ public abstract class AbstractDatabaseServerService {
 		}
 	}
 
-	protected ResultSet executeQuery(Database database, String query) throws SQLException {
-		this.openConnection(database);
-		Statement stmt = null;
-		try {
-			stmt = this.getConnection(database).createStatement();
-			ResultSet rs = stmt.executeQuery(query);
-			return rs;
-		} catch (SQLException e) {
-			throw e;
-		}
+	private void closeResultSet(ResultSet rs) throws SQLException {
+		rs.close();
 	}
 
+	private DatabaseMetaData getMetaData(Database database) throws SQLException {
+		return this.getConnection(database).getMetaData();
+	}
+
+	protected abstract TableField getNewField(String name, DatabaseMetaData metaData);
+	
 	public List<Database> listDatabases() throws SQLException {
 		List<Database> databases = new ArrayList<Database>();
-		try {
-			ResultSet rs = this.executeQuery(null, this.LIST_DATABASES_QUERY);
-			while (rs.next()) {
-				String databaseName = rs.getString("Database");
-				Database database = new Database(databaseName);
-				databases.add(database);
-			}
-		} catch (SQLException e) {
-			throw e;
-		} finally {
-			this.closeConnection();
+		DatabaseMetaData metaData = this.getMetaData(null);
+		ResultSet rs = metaData.getCatalogs();
+		while (rs.next()) {
+			databases.add(new Database(rs.getString("TABLE_CAT")));
 		}
+		closeResultSet(rs);
+		closeConnection();
 		return databases;
 	}
-	
+
 	public List<DatabaseTable> listTables(Database database) throws SQLException {
 		List<DatabaseTable> tables = new ArrayList<DatabaseTable>();
-		try {
-			ResultSet rs = this.executeQuery(database, this.LIST_TABLES_QUERY);
-			while (rs.next()) {
-				String tableName = rs.getString("Tables_in_" + database.getName());
-				DatabaseTable table = new DatabaseTable(tableName);
-				tables.add(table);
-			}
-		} catch (SQLException e) {
-			throw e;
-		} finally {
-			this.closeConnection();
+		DatabaseMetaData metaData = this.getMetaData(database);
+		ResultSet rs = metaData.getTables(null, database.getName(), "%", null);
+		while (rs.next()) {
+			tables.add(new DatabaseTable(rs.getString("TABLE_NAME")));
 		}
+	    closeResultSet(rs);
+	    closeConnection();
 		return tables;
+	}
+
+	public List<TableField> listColumns(Database database, DatabaseTable table) throws SQLException {
+		List<TableField> tableFields = new ArrayList<TableField>();
+		DatabaseMetaData metaData = this.getMetaData(database);
+		ResultSet rs = metaData.getColumns(null, database.getName(), table.getName(), null);
+		while (rs.next()) {
+			tableFields.add(getNewField(rs.getString("COLUMN_NAME"), metaData));
+		}
+	    closeResultSet(rs);
+	    closeConnection();
+		return tableFields;
 	}
 }
