@@ -25,11 +25,7 @@ public class DatabaseServer {
 	}	
 	
 	public DatabaseServer(DatabaseVendor vendor, String username, String password, String hostname, String port, List<Database> databases) {
-		this.vendor = vendor;
-		this.username = username;
-		this.password = password;
-		this.hostname = hostname;
-		this.port = port;
+		this(vendor, username, password, hostname, port);
 		this.databases = databases;
 	}
 	
