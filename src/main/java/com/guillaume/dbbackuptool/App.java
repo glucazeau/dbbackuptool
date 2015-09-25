@@ -5,9 +5,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.guillaume.dbbackuptool.bo.Database;
 import com.guillaume.dbbackuptool.bo.DatabaseServer;
-import com.guillaume.dbbackuptool.bo.DatabaseTable;
 import com.guillaume.dbbackuptool.bo.DatabaseVendor;
 import com.guillaume.dbbackuptool.service.AbstractDatabaseServerService;
 import com.guillaume.dbbackuptool.service.DatabaseServerServiceFactory;
@@ -18,6 +19,8 @@ import com.guillaume.dbbackuptool.service.DatabaseServerServiceFactory;
  */
 public class App 
 {
+	private static final Logger logger = Logger.getLogger(App.class);
+	
     public static void main( String[] args )
     {
         // read parameters
@@ -34,24 +37,9 @@ public class App
 				System.out.println(database.getName());
 			}
     	} catch (SQLException e) {
-    		System.out.println("Error retrieving databases from the server : ");
-    		System.out.println(e.getMessage());
+    		logger.error("Error while backuping the database" + e);
     	}
     	
-    	Database db = null;
-    	if (databases.size() > 0) {
-    		try {
-    			db = databases.get(0);
-    			List<DatabaseTable> tables = serverService.listTables(db);
-    			for (Iterator<DatabaseTable> iterator = tables.iterator(); iterator.hasNext();) {
-					DatabaseTable databaseTable = iterator.next();
-					System.out.println(databaseTable.getName());
-				}
-    		} catch (SQLException e) {
-        		System.out.println("Error retrieving tables from " + db.getName() + " database :");
-        		System.out.println(e.getMessage());
-    		}
-    	}
     	
     }
 }
